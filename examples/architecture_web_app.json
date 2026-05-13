@@ -1,0 +1,27 @@
+{
+  "type": "architecture",
+  "title": "Three-tier web app on AWS",
+  "description": "Browser hits a CDN, which fronts an API Gateway and a static bucket. The API calls a containerized service that reads/writes Postgres and caches in Redis.",
+  "nodes": [
+    { "id": "browser", "label": "Browser", "shape": "rounded", "role": "muted" },
+    { "id": "cdn", "label": "CloudFront CDN", "shape": "cloud", "role": "secondary" },
+    { "id": "s3-static", "label": "S3 (static assets)", "shape": "cylinder", "role": "muted", "group": "aws" },
+    { "id": "api-gw", "label": "API Gateway", "shape": "rounded", "role": "primary", "group": "aws" },
+    { "id": "api-svc", "label": "API service (ECS)", "shape": "box", "role": "primary", "group": "aws" },
+    { "id": "redis", "label": "ElastiCache (Redis)", "shape": "cylinder", "role": "accent", "group": "aws" },
+    { "id": "postgres", "label": "RDS Postgres", "shape": "cylinder", "role": "accent", "group": "aws" },
+    { "id": "auth", "label": "Cognito (auth)", "shape": "rounded", "role": "secondary", "group": "aws" }
+  ],
+  "edges": [
+    { "source": "browser", "target": "cdn", "label": "HTTPS" },
+    { "source": "cdn", "target": "s3-static", "label": "static" },
+    { "source": "cdn", "target": "api-gw", "label": "/api/*" },
+    { "source": "api-gw", "target": "auth", "label": "verify JWT", "style": "dashed" },
+    { "source": "api-gw", "target": "api-svc" },
+    { "source": "api-svc", "target": "redis", "label": "cache" },
+    { "source": "api-svc", "target": "postgres", "label": "read/write" }
+  ],
+  "groups": [
+    { "id": "aws", "label": "AWS account (us-east-1)", "members": ["s3-static", "api-gw", "api-svc", "redis", "postgres", "auth"] }
+  ]
+}

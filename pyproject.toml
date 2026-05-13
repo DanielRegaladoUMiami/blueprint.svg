@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blueprint-svg"
+version = "0.1.0"
+description = "Layered, editable SVG diagrams from text or images via a structured intermediate representation."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Daniel Regalado", email = "dxr1491@miami.edu" }]
+keywords = ["svg", "diagrams", "llm", "huggingface", "gradio", "graphviz"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+    "pydantic>=2.6",
+    "huggingface_hub>=0.24",
+    "Pillow>=10.0",
+    "pygraphviz>=1.12; platform_system != 'Windows'",
+]
+
+[project.optional-dependencies]
+app = ["gradio>=4.44"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.5"]
+
+[project.urls]
+Homepage = "https://github.com/DanielRegaladoUMiami/blueprint.svg"
+Repository = "https://github.com/DanielRegaladoUMiami/blueprint.svg"
+"Hugging Face Space" = "https://huggingface.co/spaces/DanielRegaladoCardoso/blueprint-svg"
+Issues = "https://github.com/DanielRegaladoUMiami/blueprint.svg/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"

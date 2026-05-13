@@ -1,0 +1,22 @@
+{
+  "type": "sequence",
+  "title": "OAuth 2.0 authorization code flow",
+  "description": "Standard 3-legged OAuth: user, client app, authorization server, resource server.",
+  "nodes": [
+    { "id": "user", "label": "User", "shape": "actor", "role": "muted" },
+    { "id": "client", "label": "Client App", "shape": "actor", "role": "primary" },
+    { "id": "auth-server", "label": "Auth Server", "shape": "actor", "role": "secondary" },
+    { "id": "resource", "label": "Resource API", "shape": "actor", "role": "accent" }
+  ],
+  "edges": [
+    { "source": "user", "target": "client", "label": "click 'Sign in'" },
+    { "source": "client", "target": "auth-server", "label": "redirect to /authorize" },
+    { "source": "auth-server", "target": "user", "label": "show login + consent" },
+    { "source": "user", "target": "auth-server", "label": "approve" },
+    { "source": "auth-server", "target": "client", "label": "code (via redirect)" },
+    { "source": "client", "target": "auth-server", "label": "POST /token (code + secret)" },
+    { "source": "auth-server", "target": "client", "label": "access_token" },
+    { "source": "client", "target": "resource", "label": "GET /data (Bearer)" },
+    { "source": "resource", "target": "client", "label": "200 OK + payload" }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "type": "er",
+  "title": "Minimal blog schema",
+  "description": "Users author posts; posts have tags (many-to-many) and comments.",
+  "nodes": [
+    { "id": "user", "label": "User\n(id, email, name)", "shape": "entity", "role": "primary" },
+    { "id": "post", "label": "Post\n(id, user_id, title, body, created_at)", "shape": "entity", "role": "primary" },
+    { "id": "comment", "label": "Comment\n(id, post_id, user_id, body)", "shape": "entity", "role": "secondary" },
+    { "id": "tag", "label": "Tag\n(id, name)", "shape": "entity", "role": "accent" },
+    { "id": "post-tag", "label": "PostTag\n(post_id, tag_id)", "shape": "entity", "role": "muted" }
+  ],
+  "edges": [
+    { "source": "user", "target": "post", "label": "1..N authors" },
+    { "source": "post", "target": "comment", "label": "1..N has" },
+    { "source": "user", "target": "comment", "label": "1..N writes" },
+    { "source": "post", "target": "post-tag", "label": "1..N" },
+    { "source": "tag", "target": "post-tag", "label": "1..N" }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "type": "flowchart",
+  "title": "Login flow with MFA",
+  "description": "Standard email+password login with conditional MFA challenge.",
+  "nodes": [
+    { "id": "start", "label": "Start", "shape": "rounded", "role": "muted" },
+    { "id": "enter-creds", "label": "Enter email + password", "shape": "box", "role": "primary" },
+    { "id": "valid", "label": "Credentials valid?", "shape": "diamond", "role": "accent" },
+    { "id": "mfa-required", "label": "MFA required?", "shape": "diamond", "role": "accent" },
+    { "id": "mfa-challenge", "label": "Send MFA code", "shape": "box", "role": "primary" },
+    { "id": "verify-mfa", "label": "Verify MFA code", "shape": "diamond", "role": "accent" },
+    { "id": "issue-session", "label": "Issue session token", "shape": "box", "role": "primary" },
+    { "id": "fail", "label": "Show error", "shape": "box", "role": "danger" },
+    { "id": "end", "label": "End", "shape": "rounded", "role": "muted" }
+  ],
+  "edges": [
+    { "source": "start", "target": "enter-creds" },
+    { "source": "enter-creds", "target": "valid" },
+    { "source": "valid", "target": "fail", "label": "no", "role": "danger" },
+    { "source": "valid", "target": "mfa-required", "label": "yes" },
+    { "source": "mfa-required", "target": "issue-session", "label": "no" },
+    { "source": "mfa-required", "target": "mfa-challenge", "label": "yes" },
+    { "source": "mfa-challenge", "target": "verify-mfa" },
+    { "source": "verify-mfa", "target": "issue-session", "label": "ok" },
+    { "source": "verify-mfa", "target": "fail", "label": "bad code", "role": "danger" },
+    { "source": "issue-session", "target": "end" },
+    { "source": "fail", "target": "end" }
+  ]
+}

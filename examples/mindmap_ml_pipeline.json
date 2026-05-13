@@ -1,0 +1,38 @@
+{
+  "type": "mindmap",
+  "title": "ML pipeline mindmap",
+  "description": "High-level breakdown of the stages and concerns in a production ML pipeline.",
+  "nodes": [
+    { "id": "ml", "label": "ML Pipeline", "shape": "root", "role": "primary" },
+    { "id": "data", "label": "Data", "shape": "branch", "role": "secondary" },
+    { "id": "data-ingest", "label": "Ingestion", "shape": "leaf", "role": "muted" },
+    { "id": "data-clean", "label": "Cleaning", "shape": "leaf", "role": "muted" },
+    { "id": "data-feat", "label": "Feature store", "shape": "leaf", "role": "muted" },
+    { "id": "train", "label": "Training", "shape": "branch", "role": "accent" },
+    { "id": "train-exp", "label": "Experiments", "shape": "leaf", "role": "muted" },
+    { "id": "train-hpo", "label": "HPO", "shape": "leaf", "role": "muted" },
+    { "id": "train-reg", "label": "Model registry", "shape": "leaf", "role": "muted" },
+    { "id": "serve", "label": "Serving", "shape": "branch", "role": "secondary" },
+    { "id": "serve-batch", "label": "Batch", "shape": "leaf", "role": "muted" },
+    { "id": "serve-online", "label": "Online (low latency)", "shape": "leaf", "role": "muted" },
+    { "id": "obs", "label": "Observability", "shape": "branch", "role": "danger" },
+    { "id": "obs-drift", "label": "Drift detection", "shape": "leaf", "role": "muted" },
+    { "id": "obs-eval", "label": "Eval & A/B", "shape": "leaf", "role": "muted" }
+  ],
+  "edges": [
+    { "source": "ml", "target": "data", "arrow": "none" },
+    { "source": "ml", "target": "train", "arrow": "none" },
+    { "source": "ml", "target": "serve", "arrow": "none" },
+    { "source": "ml", "target": "obs", "arrow": "none" },
+    { "source": "data", "target": "data-ingest", "arrow": "none" },
+    { "source": "data", "target": "data-clean", "arrow": "none" },
+    { "source": "data", "target": "data-feat", "arrow": "none" },
+    { "source": "train", "target": "train-exp", "arrow": "none" },
+    { "source": "train", "target": "train-hpo", "arrow": "none" },
+    { "source": "train", "target": "train-reg", "arrow": "none" },
+    { "source": "serve", "target": "serve-batch", "arrow": "none" },
+    { "source": "serve", "target": "serve-online", "arrow": "none" },
+    { "source": "obs", "target": "obs-drift", "arrow": "none" },
+    { "source": "obs", "target": "obs-eval", "arrow": "none" }
+  ]
+}
