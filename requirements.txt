@@ -1,5 +1,5 @@
 pydantic>=2.6
 huggingface_hub>=0.24
 Pillow>=10.0
-pygraphviz>=1.12
 gradio>=4.44
+audioop-lts; python_version >= "3.13"
