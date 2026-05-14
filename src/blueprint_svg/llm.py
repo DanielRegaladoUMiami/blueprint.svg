@@ -23,22 +23,40 @@ from huggingface_hub import InferenceClient
 from blueprint_svg.ir import Diagram, DiagramType
 from blueprint_svg.prompts import build_messages
 
-DEFAULT_TEXT_MODEL = os.getenv("BP_TEXT_MODEL", "Qwen/Qwen2.5-72B-Instruct")
-DEFAULT_VISION_MODEL = os.getenv("BP_VISION_MODEL", "Qwen/Qwen2.5-VL-72B-Instruct")
+# Defaults are deliberately small — they fit the HF free serverless tier,
+# so the Space works for anonymous visitors without a token. Users can
+# upgrade to the 72B variants by setting the env var or pasting a token
+# in the UI (the env vars then become the floor, not a hard cap).
+DEFAULT_TEXT_MODEL = os.getenv("BP_TEXT_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+DEFAULT_VISION_MODEL = os.getenv("BP_VISION_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct")
+
+# Models we'll try as fallbacks when the user provides their own token,
+# in case the chosen provider doesn't host the default.
+_TEXT_FALLBACKS = ["Qwen/Qwen2.5-72B-Instruct", "meta-llama/Llama-3.3-70B-Instruct"]
 
 
 class LLMError(RuntimeError):
     """Raised when the model returns something we can't parse into a Diagram."""
 
 
+def _resolve_token(token: Optional[str]) -> Optional[str]:
+    """Return the token to use, or None to call anonymously.
+
+    Order: explicit arg → HF_TOKEN env → HUGGINGFACE_HUB_TOKEN env → None.
+    Anonymous calls work for the free serverless tier on small models.
+    """
+    return (
+        token
+        or os.getenv("HF_TOKEN")
+        or os.getenv("HUGGINGFACE_HUB_TOKEN")
+        or None
+    )
+
+
 def _client(token: Optional[str] = None) -> InferenceClient:
-    token = token or os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
-    if not token:
-        raise LLMError(
-            "No Hugging Face token found. Set HF_TOKEN in the environment "
-            "(or in the Space's Secrets tab)."
-        )
-    return InferenceClient(token=token, provider="auto")
+    resolved = _resolve_token(token)
+    # provider="auto" with no token defaults to the free HF serverless backend.
+    return InferenceClient(token=resolved, provider="auto")
 
 
 def generate_from_text(
@@ -47,9 +65,16 @@ def generate_from_text(
     model: Optional[str] = None,
     token: Optional[str] = None,
 ) -> Diagram:
-    """Generate a Diagram IR from a text prompt."""
+    """Generate a Diagram IR from a text prompt.
+
+    If the caller passes a token we silently upgrade the default model to
+    the 72B variant — the user is paying for inference, give them quality.
+    """
+    chosen_model = model or (
+        _TEXT_FALLBACKS[0] if _resolve_token(token) and model is None else DEFAULT_TEXT_MODEL
+    )
     messages = build_messages(prompt, diagram_type)
-    raw = _chat(messages, model or DEFAULT_TEXT_MODEL, token)
+    raw = _chat(messages, chosen_model, token)
     return _parse_diagram(raw)
 
 
@@ -79,6 +104,19 @@ def _chat(messages: list[dict], model: str, token: Optional[str]) -> str:
             temperature=0.2,
         )
     except Exception as e:  # noqa: BLE001 — surface whatever the SDK raises
+        msg = str(e)
+        if "401" in msg or "Unauthorized" in msg or "authentication" in msg.lower():
+            raise LLMError(
+                f"This model ({model!r}) needs authentication. "
+                "Paste a free HF token in the 'Hugging Face token' accordion — "
+                "create one at https://huggingface.co/settings/tokens with the "
+                "'Make calls to Inference Providers' scope."
+            ) from e
+        if "429" in msg or "rate" in msg.lower():
+            raise LLMError(
+                "Rate limited by the free serverless tier. Wait a minute, or "
+                "paste your own token in the accordion to get a higher quota."
+            ) from e
         raise LLMError(f"Inference call failed on model {model!r}: {e}") from e
     choice = resp.choices[0]
     content = choice.message.content

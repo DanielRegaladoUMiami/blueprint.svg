@@ -588,11 +588,21 @@ with gr.Blocks(title="blueprint.svg", theme=_THEME, css=_CSS, analytics_enabled=
                     gallery_btn = gr.Button("⌗  Render", variant="primary", elem_classes=["bp-cta"])
 
             gr.HTML('<div class="bp-section-title">advanced</div>')
-            with gr.Accordion("Hugging Face token", open=False):
+            with gr.Accordion("Hugging Face token (optional)", open=False):
+                gr.Markdown(
+                    "The Space runs **Qwen2.5-7B** on the HF free tier — works "
+                    "anonymously, with rate limits. Paste your own token to "
+                    "auto-upgrade to **Qwen2.5-72B** (charged to your HF "
+                    "account). Get one at "
+                    "[huggingface.co/settings/tokens]"
+                    "(https://huggingface.co/settings/tokens) with the "
+                    "`Make calls to Inference Providers` scope.",
+                )
                 token = gr.Textbox(
-                    label="HF token (optional — falls back to Space secret)",
+                    label="HF token",
                     placeholder="hf_...",
                     type="password",
+                    show_label=False,
                 )
 
         # -------- RIGHT: canvas + IR --------

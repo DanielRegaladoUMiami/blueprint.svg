@@ -161,13 +161,14 @@ blueprint.svg/
 
 | Env var | Default | What it does |
 |---|---|---|
-| `HF_TOKEN` | — | Required for the LLM tabs. Set as a Secret in the Space. |
-| `BP_TEXT_MODEL` | `Qwen/Qwen2.5-72B-Instruct` | Model used by the *Text* tab. |
-| `BP_VISION_MODEL` | `Qwen/Qwen2.5-VL-72B-Instruct` | Model used by the *Image* tab. |
+| `HF_TOKEN` | — | Optional. If set, the app uses your token and auto-upgrades to the 72B model. If unset, calls go anonymously on the free serverless tier. |
+| `BP_TEXT_MODEL` | `Qwen/Qwen2.5-7B-Instruct` | Model used by the *Text* tab. 7B is free-tier-friendly; pass a token to auto-upgrade to 72B, or override here. |
+| `BP_VISION_MODEL` | `Qwen/Qwen2.5-VL-7B-Instruct` | Model used by the *Image* tab. |
 
-Both models are routed through `huggingface_hub.InferenceClient` with
+Both models route through `huggingface_hub.InferenceClient` with
 `provider="auto"`, so any provider on the Inference Providers list works
-without code changes.
+without code changes. The Space runs anonymously by default — visitors
+don't need to log in or paste anything to use it.
 
 ## License
 
