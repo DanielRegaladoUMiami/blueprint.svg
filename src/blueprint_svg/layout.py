@@ -89,7 +89,7 @@ def _layout_graphviz(diagram: Diagram) -> LayoutResult:
     algo = diagram.layout.algo or _DEFAULT_ALGO_BY_TYPE.get(diagram.type, "dot")
     rankdir = diagram.layout.rankdir or _DEFAULT_RANKDIR_BY_TYPE.get(diagram.type, "TB")
 
-    dot_src = _diagram_to_dot(diagram, rankdir=rankdir)
+    dot_src = _diagram_to_dot(diagram, rankdir=rankdir, algo=algo)
     proc = subprocess.run(
         [algo, "-Tjson"],
         input=dot_src.encode("utf-8"),
@@ -105,30 +105,49 @@ def _layout_graphviz(diagram: Diagram) -> LayoutResult:
     return _parse_graphviz_json(data)
 
 
-def _diagram_to_dot(diagram: Diagram, rankdir: str) -> str:
+def _diagram_to_dot(diagram: Diagram, rankdir: str, algo: str = "dot") -> str:
     """Render the IR as Graphviz DOT source.
 
     We embed node ids as-is so we can match them back from the JSON output.
     Sizes are kept uniform-ish; the renderer will redraw shapes anyway, we
     only need Graphviz for *positions*.
     """
+    # Radial layouts (twopi/circo) handle clusters poorly — they cram
+    # everything into the center. Disable groups for those and pick a root.
+    is_radial = algo in ("twopi", "circo")
+
+    # Pick wider spacing for radial layouts and mindmaps so long labels
+    # don't overlap at the dense inner radius.
+    nodesep = max(diagram.layout.nodesep, 1.0 if is_radial else 0.6)
+    ranksep = max(diagram.layout.ranksep, 2.0 if is_radial else 0.9)
+
     lines: list[str] = ["digraph G {"]
     lines.append(f'  rankdir="{rankdir}";')
-    lines.append(f'  nodesep={diagram.layout.nodesep};')
-    lines.append(f'  ranksep={diagram.layout.ranksep};')
+    lines.append(f'  nodesep={nodesep};')
+    lines.append(f'  ranksep={ranksep};')
+    lines.append('  overlap=false;')
+    lines.append('  splines=true;')
+
+    # twopi needs a root node; pick the explicit "root" shape if present,
+    # otherwise the node with no incoming edges, otherwise the first node.
+    if algo == "twopi":
+        root_id = _pick_root(diagram)
+        if root_id:
+            lines.append(f'  root="{root_id}";')
+
     lines.append('  node [shape=box, fontname="Inter", fontsize=12, '
-                 'width=1.6, height=0.6, fixedsize=false];')
+                 'width=1.6, height=0.6, fixedsize=false, margin="0.18,0.10"];')
     lines.append('  edge [fontname="Inter", fontsize=10];')
 
-    # Groups → clusters (Graphviz: subgraph cluster_*)
-    grouped: set[str] = set()
-    for g in diagram.groups:
-        lines.append(f'  subgraph "cluster_{g.id}" {{')
-        lines.append(f'    label="{_escape(g.label)}";')
-        for m in g.members:
-            lines.append(f'    "{m}";')
-            grouped.add(m)
-        lines.append("  }")
+    # Groups → clusters (skip for radial layouts where clusters break things)
+    if not is_radial:
+        for g in diagram.groups:
+            lines.append(f'  subgraph "cluster_{g.id}" {{')
+            lines.append(f'    label="{_escape(g.label)}";')
+            lines.append(f'    style="rounded,dashed"; color="#cbd5e1";')
+            for m in g.members:
+                lines.append(f'    "{m}";')
+            lines.append("  }")
 
     for n in diagram.nodes:
         lines.append(f'  "{n.id}" [label="{_escape(n.label)}"];')
@@ -150,6 +169,21 @@ def _diagram_to_dot(diagram: Diagram, rankdir: str) -> str:
 
 def _escape(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _pick_root(diagram: Diagram) -> Optional[str]:
+    """Choose the most plausible root node for a radial mindmap layout."""
+    # 1. Explicit shape="root".
+    for n in diagram.nodes:
+        if n.shape == "root":
+            return n.id
+    # 2. The node with no incoming edges (a tree root).
+    targets = {e.target for e in diagram.edges}
+    roots = [n.id for n in diagram.nodes if n.id not in targets]
+    if len(roots) == 1:
+        return roots[0]
+    # 3. First node listed.
+    return diagram.nodes[0].id if diagram.nodes else None
 
 
 def _parse_graphviz_json(data: dict) -> LayoutResult:
